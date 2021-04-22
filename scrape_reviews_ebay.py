@@ -48,6 +48,7 @@ def get_reviews_ebay(page_url):
             datetime_scraped = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
             
             review_id = author + str(star_rating) + str(datetime_scraped)
+            review_id = review_id.strip()
             
             if 'digital' in page_url.lower():
                 model = 'Sony PlayStation 5 Digital Edition'

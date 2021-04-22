@@ -19,6 +19,7 @@ KeySchema = [
         {
             "AttributeName": "item_id",
             "AttributeType": 'S'
+        }
     ],
     ProvisionedThroughput={
         'ReadCapacityUnits': 1,

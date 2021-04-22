@@ -46,6 +46,9 @@ def get_reviews_walmart(page_url):
             date_created = listing.find(class_='review-date-submissionTime').text
             datetime_scraped = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
             
+            review_id = author + str(star_rating) + str(datetime_scraped)
+
+            
             if 'digital' in soup.find(class_="prod-ProductTitle").text.lower():
                 model = 'Sony PlayStation 5 Digital Edition'
             else:
@@ -54,8 +57,12 @@ def get_reviews_walmart(page_url):
             review_params = {}    
             for variable in ["review_title", "review_text", "author", "star_rating",
                              "verified_review", "helpful_upvotes", "unhelpful_upvotes", 
-                             "model", "date_created", "datetime_scraped", "source"]:
+                             "model", "date_created", "datetime_scraped", "source",
+                             "review_id"]:
                 review_params[variable] = eval(variable)
+                
+            review_params = json.loads(json.dumps(review_params), 
+                                       parse_float=Decimal)
                 
             yield(review_params)
             

@@ -123,7 +123,7 @@ def create_ebay_listings_dynamo(**kwargs):
 	    try:
 	        seller_name = soup.find(class_="mbg-nw").text
 	    except:
-	        seller_name = soup.find(class_="mbg").text
+	        print('Seller name not found', link)
 	    
 	    try:
 	        seller_pos_feedback_12m_per = float(soup.find(id="si-fb").text.split("%")[0])
@@ -137,24 +137,29 @@ def create_ebay_listings_dynamo(**kwargs):
 	        
 	    attr_table = soup.find(class_="itemAttr")
 	    attributes = []
-	    for el in attr_table.find_all(class_="attrLabels"):
+
+	    if attr_table is None:
+	        dict_features = {}
+	    else:
+	        for el in attr_table.find_all(class_="attrLabels"):
 	            attributes.append(el.text.strip().replace(":", "").lower())
-	            
-	    len_attrs = len(attributes)
+
+	            len_attrs = len(attributes)
+
+	            dict_features = {}
+	            for i, el in enumerate(list(attr_table.find_all("span"))[-len_attrs:]):
+	                try:
+	                    dict_features[attributes[i]] = el.text
+	                except:
+	                    pass
 	    
-	    dict_features = {}
-	    for i, el in enumerate(list(attr_table.find_all("span"))[-len_attrs:]):
-	        try:
-	            dict_features[attributes[i]] = el.text
-	        except:
-	            pass
+	            if 'condition' in map(str.lower,attributes):
+	                try:
+	                    del dict_features['condition']
+	                except:
+	                    del dict_features['Condition']
 	    
-	    if 'condition' in map(str.lower,attributes):
-	        try:
-	            del dict_features['condition']
-	        except:
-	            del dict_features['Condition']
-	    
+
 	    for variable in ["item_id", "seller_name", "seller_pos_feedback_12m_per",
 	                     "product_rating_avg"]:
 	        try:
@@ -202,15 +207,20 @@ def create_ebay_listings_dynamo(**kwargs):
 	            
 	            yield(output)
 
-	def create_ebay_listings_PS5():
-	    table = dynamodb.Table('ebay_listings_PS5') 
+	dynamodb = boto3.resource(kwargs['db'],
+	                          aws_access_key_id=kwargs['key'],
+	                          aws_secret_access_key= kwargs['s_key'],
+	                          region_name=kwargs['r_name'])
+
+	def create_ebay_listings_PS5(db):
+	    table = db.Table('ebay_listings_PS5') 
 	    
 	    url = "https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw=ps5+console&_sacat=0&LH_TitleDesc=0&_pgn=1"
 	        
 	    for item in get_products(url):
 	        table.put_item(Item=item)
 
-	create_ebay_listings_PS5()
+	create_ebay_listings_PS5(dynamodb)
 
 
 def create_reviews_dynamo(**kwargs):
@@ -300,6 +310,7 @@ def create_reviews_dynamo(**kwargs):
 	            star_rating = listing.find(class_="average-rating").text
 	            star_rating = float(re.sub('[()]', '', star_rating))
 	            source = "walmart"
+	            verified_review = 'yes'
 	                        
 	            helpful_upvotes = re.search(r'\((.*?)\)', 
 	                                        listing.find(class_='yes-vote').text).group(1)
@@ -331,37 +342,42 @@ def create_reviews_dynamo(**kwargs):
 	            
 	            time.sleep(1)
 	#Function for entering reviews in database
-	def create_reviews_PS5(function):
-	    table = dynamodb.Table('consumer_reviews_PS5') 
+	def create_reviews_PS5(function, db):
+	    table = db.Table('consumer_reviews_PS5') 
 	        
 	    for item in function:
 	        table.put_item(Item=item)
+
+	dynamodb = boto3.resource(kwargs['db'],
+	                          aws_access_key_id=kwargs['key'],
+	                          aws_secret_access_key= kwargs['s_key'],
+	                          region_name=kwargs['r_name'])
 
 	#Disk Edition Walmart
 	url = "https://www.walmart.com/reviews/product/363472942?page=1"
 	function =  get_reviews_walmart(url)
 
-	create_reviews_PS5(function)
+	create_reviews_PS5(function, dynamodb)
 
 	    
 	#Digital Edition Walmart
 	url = "https://www.walmart.com/reviews/product/493824815?page=1"
 	function =  get_reviews_walmart(url)
 
-	create_reviews_PS5(function)
+	create_reviews_PS5(function, dynamodb)
 
 	#Digital Edition Ebay
 	url = "https://www.ebay.co.uk/urw/Sony-PS5-Digital-Edition-Console-White/product-reviews/25040975636?pgn=1&condition=all"
 	function =  get_reviews_ebay(url)
 
-	create_reviews_PS5(function)
+	create_reviews_PS5(function, dynamodb)
 
 
 	#Disk edition Ebay
 	url = "https://www.ebay.co.uk/urw/Sony-PS5-Blu-Ray-Edition-Console-White/product-reviews/19040936896?pgn=1&condition=all"
 	function =  get_reviews_ebay(url)
 
-	create_reviews_PS5(function)
+	create_reviews_PS5(function, dynamodb)
 
 # =============================================================================
 # 3. Set up the dags

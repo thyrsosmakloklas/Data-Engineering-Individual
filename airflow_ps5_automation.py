@@ -274,7 +274,8 @@ def create_reviews_dynamo(**kwargs):
 	                             "helpful_upvotes", "unhelpful_upvotes", "model",
 	                             "date_created", "datetime_scraped", "source", 
 	                             "review_id"]:
-	                review_params[variable] = eval(variable)
+	                if variable in locals():
+	                	review_params[variable] = eval(variable)
 	                
 	            review_params = json.loads(json.dumps(review_params), 
 	                                       parse_float=Decimal)

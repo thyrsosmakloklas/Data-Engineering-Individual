@@ -11,6 +11,8 @@ import re
 import pandas as pd
 import time
 from datetime import datetime
+from decimal import Decimal
+import json
 
 #product features
 def get_product_features(link):
@@ -19,7 +21,10 @@ def get_product_features(link):
     soup = BeautifulSoup(html, "html5lib")
     
     item_id = (link.split("hash=item"))[1].split(":g:")[0]
-    seller_name = soup.find(class_="mbg-nw").text
+    try:
+        seller_name = soup.find(class_="mbg-nw").text
+    except:
+        seller_name = soup.find(class_="mbg").text
     
     try:
         seller_pos_feedback_12m_per = float(soup.find(id="si-fb").text.split("%")[0])
@@ -40,7 +45,10 @@ def get_product_features(link):
     
     dict_features = {}
     for i, el in enumerate(list(attr_table.find_all("span"))[-len_attrs:]):
-        dict_features[attributes[i]] = el.text
+        try:
+            dict_features[attributes[i]] = el.text
+        except:
+            pass
     
     if 'condition' in map(str.lower,attributes):
         try:
@@ -55,12 +63,11 @@ def get_product_features(link):
         except:
             pass
     
-    return(dict_features) 
-    
+    return(dict_features)
+
 def get_products(page_url):
-    for page in range(1, 2):
+    for page in range(1, 10):
         page_url = page_url[0:-1] + str(page)
-        
         url = page_url
         response = requests.get(url)
         html = response.text
@@ -90,6 +97,7 @@ def get_products(page_url):
             product_features = get_product_features(item_link)
             
             output = {**listing_features, **product_features}
+            output = json.loads(json.dumps(output), parse_float=Decimal)
             
             time.sleep(1)
             

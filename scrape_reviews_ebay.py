@@ -31,9 +31,14 @@ def get_reviews_ebay(page_url):
             review_title = listing.find(class_="review-item-title").text.strip()
             
             attributes = listing.find_all(class_="rvw-val")
-            verified_review = attributes[0].text.strip()
-            condition = attributes[1].text.strip()
-            seller_name = attributes[2].text.strip()
+            try:
+                verified_review = attributes[0].text.strip()
+                if verified_review.lower == 'yes':
+                    condition = attributes[1].text.strip()
+                    seller_name = attributes[2].text.strip()
+            except:
+                pass
+            
             source = "ebay"
             
             helpful_upvotes = listing.find(class_='positive-h-c').text
@@ -41,6 +46,8 @@ def get_reviews_ebay(page_url):
         
             date_created = listing.find(class_='review-item-date').text
             datetime_scraped = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+            
+            review_id = author + str(star_rating) + str(datetime_scraped)
             
             if 'digital' in page_url.lower():
                 model = 'Sony PlayStation 5 Digital Edition'
@@ -51,8 +58,12 @@ def get_reviews_ebay(page_url):
             for variable in ["review_title", "review_text", "author", "star_rating", 
                              "condition", "verified_review", "seller_name", 
                              "helpful_upvotes", "unhelpful_upvotes", "model",
-                             "date_created", "datetime_scraped", "source"]:
+                             "date_created", "datetime_scraped", "source", 
+                             "review_id"]:
                 review_params[variable] = eval(variable)
+                
+            review_params = json.loads(json.dumps(review_params), 
+                                       parse_float=Decimal)
                 
             yield(review_params)
             

@@ -14,11 +14,11 @@ from datetime import datetime
 
 #product features
 def get_product_features(link):
-    response = requests.get(item_link)
+    response = requests.get(link)
     html = response.text
     soup = BeautifulSoup(html, "html5lib")
     
-    item_id = (item_link.split("hash=item"))[1].split(":g:")[0]
+    item_id = (link.split("hash=item"))[1].split(":g:")[0]
     seller_name = soup.find(class_="mbg-nw").text
     
     try:
@@ -34,7 +34,7 @@ def get_product_features(link):
     attr_table = soup.find(class_="itemAttr")
     attributes = []
     for el in attr_table.find_all(class_="attrLabels"):
-            attributes.append(el.text.strip().replace(":", ""))
+            attributes.append(el.text.strip().replace(":", "").lower())
             
     len_attrs = len(attributes)
     
@@ -42,8 +42,11 @@ def get_product_features(link):
     for i, el in enumerate(list(attr_table.find_all("span"))[-len_attrs:]):
         dict_features[attributes[i]] = el.text
     
-    if 'Condition' in attributes:
-        del dict_features['Condition']
+    if 'condition' in map(str.lower,attributes):
+        try:
+            del dict_features['condition']
+        except:
+            del dict_features['Condition']
     
     for variable in ["item_id", "seller_name", "seller_pos_feedback_12m_per",
                      "product_rating_avg"]:
@@ -55,7 +58,7 @@ def get_product_features(link):
     return(dict_features) 
     
 def get_products(page_url):
-    for page in range(1, 4):
+    for page in range(1, 2):
         page_url = page_url[0:-1] + str(page)
         
         url = page_url
@@ -92,7 +95,7 @@ def get_products(page_url):
             
             yield(output)
     
-url = "https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw=ps5+console&_sacat=0&_pgn=1https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw=ps5+console&_sacat=0&_pgn=1"
+url = "https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw=ps5+console&_sacat=0&LH_TitleDesc=0&_pgn=1"
 
 for i in get_products(url):
     print(i)
